@@ -74,7 +74,7 @@ def generate_catastrophe_data(params, p_left=0.5):
     # add Poisson noise
     dNk_w_noise = dNk + st.poisson.rvs(size=n_cells, mu=1)
     # write to dataframe
-    df = pd.DataFrame({'errors' : errors,
+    df = pd.DataFrame({'errors' : errors.astype(int),
                       'dNk' : dNk,
                       'dNk_w_noise' : dNk_w_noise})
     return df

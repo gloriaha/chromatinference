@@ -1,4 +1,5 @@
-# independent model# p_misseg: 0.01
+# independent model
+# p_misseg: 0.01
 # n_cells: 10000
 # n_chrom: 92
  errors  dNk  dNk_w_noise
