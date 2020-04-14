@@ -1,0 +1,5 @@
+C: 10
+n_cells: 10000
+n_chrom: 92
+p_cat: 0.5
+p_misseg: 0.003

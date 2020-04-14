@@ -1,6 +1,6 @@
 import os
 import pandas as pd
-
+import yaml
 
 def get_example_data_file_path(filename, data_dir='example_data'):
     # __file__ is the location of the source file currently in use (so
@@ -16,6 +16,9 @@ def get_example_data_file_path(filename, data_dir='example_data'):
     data_dir = os.path.join(start_dir, data_dir)
     return os.path.join(start_dir, data_dir, filename)
 
-
-def load_data(data_file):
-    return pd.read_csv(data_file, sep=' ')
+class SyntheticData:
+    def __init__(self, param_file, data_file):
+        self.params = yaml.load(open(param_file), Loader=yaml.FullLoader)
+        self.data = self.load_data(data_file)
+    def load_data(self, data_file):
+        return pd.read_csv(data_file, sep='\s+', comment='#')
