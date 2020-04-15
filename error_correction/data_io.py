@@ -13,12 +13,12 @@ def get_example_data_file_path(filename, data_dir='example_data'):
     # this function in your tests directory and your data is in the
     # package directory one level up) you can use
     # up_dir = os.path.split(start_dir)[0]
-    data_dir = os.path.join(start_dir, data_dir)
+    #data_dir = os.path.join(start_dir, data_dir)
     return os.path.join(start_dir, data_dir, filename)
 
 class SyntheticData:
-    def __init__(self, param_file, data_file):
-        self.params = yaml.load(open(param_file), Loader=yaml.FullLoader)
-        self.data = self.load_data(data_file)
-    def load_data(self, data_file):
-        return pd.read_csv(data_file, sep='\s+', comment='#')
+    def __init__(self, param_file, data_file, data_dir):
+        data_path = get_example_data_file_path(data_file, data_dir)
+        param_path = get_example_data_file_path(param_file, data_dir)
+        self.params = yaml.load(open(param_path), Loader=yaml.FullLoader)
+        self.data = pd.read_csv(data_path, sep='\s+', comment='#')
