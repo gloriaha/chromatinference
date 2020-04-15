@@ -9,14 +9,16 @@ dir=''
 
 class TestIo(TestCase):
     def test_data_io(self):
-        data = SyntheticData(dir+'params_test.yml',
-                             dir+'data_test.txt')
+        data = SyntheticData('params_test.yml',
+                             'data_test.txt',
+                             dir)
         assert data.data['errors'][0] == 1
 
 class TestIo2(TestCase):
     def test_data_io(self):
-        data = SyntheticData(dir+'params_test.yml',
-                             dir+'data_test.txt')
+        data = SyntheticData('params_test.yml',
+                             'data_test.txt',
+                            dir)
         pee = np.random.rand()
         logp = np.log(pee)
         logLike = logLikeIndDelta(data,pee)
