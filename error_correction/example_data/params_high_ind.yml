@@ -1,3 +1,5 @@
 n_cells: 1000
 n_chrom: 92
+p_fn: 0
+p_left: 0.5
 p_misseg: 0.01
