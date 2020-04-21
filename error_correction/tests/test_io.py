@@ -32,7 +32,7 @@ class TestLike2(TestCase):
                             data_dir)
         pee = np.random.rand()
         logLike1 = logLikeIndDelta(data,[pee])
-        logLike2 = logLikeCatDelta(data,[pee,0.])
+        logLike2 = logLikeGivenCatDelta(data,[pee,0.])
         assert logLike1 == logLike2
 
 class TestLike3(TestCase):
@@ -52,7 +52,7 @@ class TestLike4(TestCase):
                             data_dir)
         pee = np.random.rand()
         logLike1 = logLikeIndDelta(data,[pee])
-        logLike2 = logLikeCatBiasedDelta(data,[pee,0.,0.5])
+        logLike2 = logLikeGivenCatBiasedDelta(data,[pee,0.,0.5])
         assert logLike1 == logLike2
 
 class TestLike5(TestCase):
@@ -63,6 +63,26 @@ class TestLike5(TestCase):
         pee = np.random.rand()
         logLike1 = logLikeIndDelta(data,[pee])
         assert logLike1 == -inf
+
+class TestLike6(TestCase):
+    def test_data_io(self):
+        data = SyntheticData('params_test.yml',
+                             'data_test.txt',
+                            data_dir)
+        pee = np.random.rand()
+        logLike1 = logLikeCatDelta(data,[pee,0.,0.])
+        logLike2 = logLikeGivenCatDelta(data,[pee,0.])
+        assert logLike1 == logLike2
+
+class TestLike7(TestCase):
+    def test_data_io(self):
+        data = SyntheticData('params_test.yml',
+                             'data_test.txt',
+                            data_dir)
+        pee = np.random.rand()
+        logLike1 = logLikeCatBiasedDelta(data,[pee,0.,0.,0.5])
+        logLike2 = logLikeGivenCatBiasedDelta(data,[pee,0.,0.5])
+        assert logLike1 == logLike2
 
 class TestBinom1(TestCase):
     def test_data_io(self):
