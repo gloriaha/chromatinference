@@ -94,7 +94,7 @@ def logLikeIndDelta(data, params):
 def logLikeBiasedDelta(data, params):
     '''
     Compute the likelihood of the difference in chromosomes
-    within the independent segregation model
+    within the biased missegregation model
     
     Inputs
     __________
@@ -149,10 +149,10 @@ def logLikeBiasedDelta(data, params):
 
 
     
-def logLikeCatDelta(data, params):
+def logLikeGivenCatDelta(data, params):
     '''
     Compute the likelihood of the difference in chromosomes
-    within the independent segregation model
+    within the catastrophe model given catastrophe
     
     Inputs
     __________
@@ -163,7 +163,7 @@ def logLikeCatDelta(data, params):
         .data a dataframe containing errors, dNk, and dNk_w_noise
         
     params : list-like
-        params = [p, alpha]
+        params = [p, C]
         p : probability of chromosome missegregation
         C : number of catastrophic chromosomes
         
@@ -205,11 +205,10 @@ def logLikeCatDelta(data, params):
 
 
 
-def logLikeCatBiasedDelta(data, params):
-
+def logLikeCatDelta(data, params):
     '''
     Compute the likelihood of the difference in chromosomes
-    within the independent segregation model
+    within the catastrophe model
     
     Inputs
     __________
@@ -220,7 +219,52 @@ def logLikeCatBiasedDelta(data, params):
         .data a dataframe containing errors, dNk, and dNk_w_noise
         
     params : list-like
-        params = [p, alpha]
+        params = [p, C, pCat]
+        p : probability of chromosome missegregation
+        C : number of catastrophic chromosomes
+        pCat : probability of catastrophe
+        
+        
+    Outputs
+    __________
+    
+    logLikelihood : float-like
+        log likelihood function of the above
+    '''
+    
+    # Note the model parameters
+    p, C, pCat = params
+    
+    # Write down the log likelihood given catastrophe
+    logLikeGivenCat = logLikeGivenCatDelta(data, [p, C])
+
+    # Write down the log likelihood with no catastrophe
+    logLikeNoCat = logLikeIndDelta(data, [p])
+
+    # Write down the full likelihood function
+    expLikeRat = np.exp(logLikeGivenCat-logLikeNoCat)
+    logLikelihood = logLikeNoCat+np.log(pCat*expLikeRat+1-pCat)
+    
+    return logLikelihood
+
+
+
+def logLikeGivenCatBiasedDelta(data, params):
+
+    '''
+    Compute the likelihood of the difference in chromosomes
+    within the biased missegregation model given catastrophe
+    
+    Inputs
+    __________
+    
+    data : SyntheticData-like
+        class containing .params, .data, and .load_data with
+        .params a dictionary containing n_cells, n_chrom, p_misseg;
+        .data a dataframe containing errors, dNk, and dNk_w_noise
+        
+    params : list-like
+        params = [p, C, alpha]
         p : probability of chromosome missegregation
         C : number of catastrophic chromosomes
         alpha : probability chromosome ends up in daughter cell 1
@@ -260,6 +304,51 @@ def logLikeCatBiasedDelta(data, params):
     likes = (likes1+likes2).reshape([len(mVals),len(deltas)])
     likesSum = likes.sum(axis=0)
     logLikelihood = np.sum(np.log(likesSum))
+    
+    return logLikelihood
+
+
+
+def logLikeCatBiasedDelta(data, params):
+    '''
+    Compute the likelihood of the difference in chromosomes
+    within the catastrophe and biased missegregation model
+    
+    Inputs
+    __________
+    
+    data : SyntheticData-like
+        class containing .params, .data, and .load_data with
+        .params a dictionary containing n_cells, n_chrom, p_misseg;
+        .data a dataframe containing errors, dNk, and dNk_w_noise
+        
+    params : list-like
+        params = [p, C, pCat, alpha]
+        p : probability of chromosome missegregation
+        C : number of catastrophic chromosomes
+        pCat : probability of catastrophe
+        alpha : missegregation bias (0.5 for unbiased)
+        
+        
+    Outputs
+    __________
+    
+    logLikelihood : float-like
+        log likelihood function of the above
+    '''
+    
+    # Note the model parameters
+    p, C, pCat, alpha = params
+    
+    # Write down the log likelihood given catastrophe
+    logLikeGivenCat = logLikeGivenCatBiasedDelta(data, [p, C, alpha])
+
+    # Write down the log likelihood with no catastrophe
+    logLikeNoCat = logLikeBiasedDelta(data, [p, alpha])
+
+    # Write down the full likelihood function
+    expLikeRat = np.exp(logLikeGivenCat-logLikeNoCat)
+    logLikelihood = logLikeNoCat+np.log(pCat*expLikeRat+1-pCat)
     
     return logLikelihood
 
