@@ -9,6 +9,18 @@ from math import inf
 
 data_dir='tests/'
 
+class TestErrorConstruction(TestCase):
+    def test_zero_error(self):
+        test_errors = generate_data.generate_errors(10, 10, 0)
+        assert len(test_errors) == 10
+        assert np.array_equal(test_errors, np.zeros(10))
+    def test_100_error(self):
+        test_errors = generate_data.generate_errors(10, 10, 1)
+        assert np.array_equal(test_errors, 10*np.ones(10))
+    def test_error_range(self):
+        test_errors = generate_data.generate_errors(10, 1, 0.1)
+        assert test_errors in range(10)
+        
 class TestDeltaConstruction(TestCase):
     def test_delta_range(self):
         test_N1, test_N2, test_delta = generate_data.dN_k_from_errors(10, 
