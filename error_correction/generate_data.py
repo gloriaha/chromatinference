@@ -4,6 +4,19 @@ import pandas as pd
 from error_correction.data_io import get_example_data_file_path
 import yaml
 
+def generate_errors(n_chrom, n_cells, p_misseg):
+    """
+    generates number of random independent missegregation events
+    inputs
+        n_chrom : number of chromosomes in cell, int
+        n_cells : number of cells, int
+        p_misseg : probability of missegregation, float
+    output
+        errors : error counts for each cell, ndarray
+    """
+    errors = st.binom.rvs(n_chrom, size=n_cells, p=p_misseg)
+    return errors
+
 def dN_k_from_errors(n_chrom, errors, p_left):
     """
     generates random kinetochore count differences
@@ -19,8 +32,8 @@ def dN_k_from_errors(n_chrom, errors, p_left):
     # choose random numbers to determine if missegregations go left or right
     random_choice = [np.random.random(int(n)) for n in errors]
     # store cell 1, cell 2 kinetochore numbers
-    N_1 = n_chrom + np.array([2*np.sum(r>p_left) for r in random_choice])
-    N_2 = n_chrom + np.array([2*np.sum(r<=p_left) for r in random_choice])
+    N_1 = n_chrom - errors + np.array([2*np.sum(r>p_left) for r in random_choice])
+    N_2 = n_chrom - errors + np.array([2*np.sum(r<=p_left) for r in random_choice])
     # convert into kinetochore count diferences
     dN_k = np.abs(N_1-N_2)
     return N_1, N_2, dN_k
@@ -37,8 +50,8 @@ def add_noise(N_1, N_2, p_fn):
         N_2_noise : measured number of chromatids in cell 2, ndarray
         dN_k_noise : measured kinetochore count differences, ndarray
     """
-    N_1_noise = np.array([st.binom.rvs(n, 1-p_fn) for n in N_1])
-    N_2_noise = np.array([st.binom.rvs(n, 1-p_fn) for n in N_2])
+    N_1_noise = np.array([st.binom.rvs(int(n), 1-p_fn) for n in N_1])
+    N_2_noise = np.array([st.binom.rvs(int(n), 1-p_fn) for n in N_2])
     dN_k_noise = np.abs(N_1_noise-N_2_noise)
     return N_1_noise, N_2_noise, dN_k_noise
 
@@ -60,7 +73,7 @@ def generate_independent_data(params):
     # unpack parameters
     p_misseg, n_cells, n_chrom, p_left, p_fn = params
     # randomly choose number of errors for each cell
-    errors = st.binom.rvs(n_chrom, size=n_cells, p=p_misseg)
+    errors = generate_errors(n_chrom, n_cells, p_misseg)
     # convert to kinetochore count difference
     N_1, N_2, dN_k = dN_k_from_errors(n_chrom, errors, p_left)
     # add counting noise
@@ -89,7 +102,9 @@ def generate_catastrophe_data(params):
     output
         Pandas dataframe containing
             errors : true error counts for each cell
+            N_1, N_2 : true chromatids in cells 1, 2
             dNk : random kinetochore count differences
+            N_1_w_noise, N_2_w_noise : 
             dNk_w_noise : kinetochore count differences with Poisson noise added
     """
     # unpack parameters
@@ -98,8 +113,9 @@ def generate_catastrophe_data(params):
     n_cat = st.binom.rvs(n_cells, p=p_cat)
     # randomly choose number of errors for each cell
     errors = np.zeros(n_cells)
-    errors[:n_cat]= st.binom.rvs(n_chrom, size=n_cat, p=p_misseg)+C
-    errors[n_cat:] = st.binom.rvs(n_chrom, size=n_cells-n_cat, p=p_misseg)
+    errors[:n_cat]= generate_errors(n_chrom, n_cat, p_misseg)+C
+    errors[n_cat:] = generate_errors(n_chrom, n_cells-n_cat, p_misseg)
+    errors = errors.astype(int)
     # convert to kinetochore count difference
     N_1, N_2, dN_k = dN_k_from_errors(n_chrom, errors, p_left)
     # add counting noise
