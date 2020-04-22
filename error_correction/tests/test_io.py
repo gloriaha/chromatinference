@@ -104,7 +104,7 @@ class TestLike3(TestCase):
                             data_dir)
         pee = np.random.rand()
         logLike1 = logLikeIndDelta(data,[pee])
-        logLike2 = logLikeBiasedDelta(data,[pee,0.5])
+        logLike2 = logLikeBiasedDelta([pee,0.5], data.data['dNk'], data.params['n_chrom'], data.params['n_cells'])
         assert logLike1 == logLike2
 
 class TestLike4(TestCase):
@@ -160,3 +160,18 @@ class TestBinom3(TestCase):
     def test_data_io(self):
         tB1 = truncateBinom([1.,1.],[0.5,1.])
         assert tB1.all() == np.array([0.,1.]).all()
+
+class TestPriors(TestCase):
+    def test_biased_prior(self):
+        prior = logPriorBiasedDelta([0,0])
+        assert prior == 0
+    def test_biased_prior_range(self):
+        prior = logPriorBiasedDelta([-10, 0])
+        prior2 = logPriorBiasedDelta([0,-10])
+        assert prior == -np.inf
+        assert prior2 == -np.inf
+
+class TestPost(TestCase):
+    def test_biased_post(self):
+        post = logPostBiasedDelta([0,0], np.array([0, 0]), 10, 10)
+        assert post != -np.inf
