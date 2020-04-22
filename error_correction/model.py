@@ -124,7 +124,7 @@ def logLikeBiasedDelta(params, deltas, N, nCells):
         p : probability of chromosome missegregation
         alpha : probability chromosome ends up in daughter cell 1
             
-    deltas : ndarray or series
+    deltas : ndarray
         kinetochore differences, from dNk column of data
         
     N : int
@@ -178,7 +178,7 @@ def logPostBiasedDelta(params, deltas, N, nCells):
         p : probability of chromosome missegregation
         alpha : probability chromosome ends up in daughter cell 1
             
-    deltas : ndarray or series
+    deltas : ndarray
         kinetochore differences, from dNk column of data
         
     N : int
@@ -210,13 +210,13 @@ def emcee_biased_fit(data, nwalkers=50, nsteps=2000):
         nwalkers : number of MCMC walkers, int
         nsteps : number of MCMC steps, int
     output
-        df : dataframe with emcee results
+        sampler : emcee results
     """
     # unpack parameters
     n_chrom = data.params['n_chrom']
     n_cells = data.params['n_cells']
-    dNk = data.data['dNk']
-    ndim= 2
+    dNk = np.array(data.data['dNk'])
+    ndim = 2
     # set up starting positions
     gaussian_ball = 1.e-3 * np.random.randn(nwalkers, ndim)
     starting_positions = (1 + gaussian_ball) * [0.01,0.25]
