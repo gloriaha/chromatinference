@@ -70,6 +70,23 @@ class TestNoiseConstruction(TestCase):
         assert test_N2_noise[1] in range(10)
         assert test_delta_noise[1] in range(10)
 
+class TestDataConstruction(TestCase):
+    def test_independent_data_zero_error(self):
+        # check that no errors occur when p_misseg=0
+        params = [0, 10, 10, 0.5, 0]
+        df = generate_data.generate_independent_data(params)
+        assert np.array_equal(df['dNk'].values, np.zeros(10))
+        # also check that no noise occurs when p_fn=0
+        assert np.array_equal(df['dNk'].values, df['dNk_w_noise'].values)
+    def test_independent_data_range(self):
+        # check that results are in expected range
+        params = [0.01, 10, 10, 0.5, 0]
+        df = generate_data.generate_independent_data(params)
+        assert np.all(df['dNk'].values >= 0)
+        assert np.all(df['dNk'].values <= 20)
+        # also check that no noise occurs when p_fn=0
+        assert np.array_equal(df['dNk'].values, df['dNk_w_noise'].values)
+
 class TestIo(TestCase):
     def test_data_io(self):
         data = SyntheticData('params_test.yml',
