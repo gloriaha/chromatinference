@@ -32,8 +32,8 @@ def dN_k_from_errors(n_chrom, errors, p_left):
     # choose random numbers to determine if missegregations go left or right
     random_choice = [np.random.random(int(n)) for n in errors]
     # store cell 1, cell 2 kinetochore numbers
-    N_1 = n_chrom - errors + np.array([2*np.sum(r>p_left) for r in random_choice])
-    N_2 = n_chrom - errors + np.array([2*np.sum(r<=p_left) for r in random_choice])
+    N_1 = n_chrom - errors + np.array([2*np.sum(r<p_left) for r in random_choice])
+    N_2 = n_chrom - errors + np.array([2*np.sum(r>=p_left) for r in random_choice])
     # convert into kinetochore count diferences
     dN_k = np.abs(N_1-N_2)
     return N_1, N_2, dN_k
