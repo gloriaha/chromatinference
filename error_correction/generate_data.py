@@ -136,27 +136,32 @@ class GenerateData:
     def make_data(self, model, params, name, data_dir):
         # store parameter names
         param_names = ['p_misseg', 'n_cells', 'n_chrom', 'p_left', 'p_fn', 'p_cat', 'C']
-        # set up file path
-        data_path = get_example_data_file_path('data_'+str(name)+'.txt', data_dir)
-        param_path = get_example_data_file_path('params_'+str(name)+'.yml', data_dir)
+        # set up file path if name is not None
+        if name:
+            data_path = get_example_data_file_path('data_'+str(name)+'.txt', data_dir)
+            param_path = get_example_data_file_path('params_'+str(name)+'.yml', data_dir)
         # generate and write data files
         if model == 'independent':
             param_dict = {name:param for name, param in zip(param_names[:5], params)}
             df = generate_independent_data(params)
-            with open(data_path, 'w') as f:
-                f.write('# independent model\n')
-                f.write(df.to_string(index=None))
-            with open(param_path, 'w') as f:
-                yaml.dump(param_dict, f, default_flow_style=False)
+            if name:
+                # save file if name is not None
+                with open(data_path, 'w') as f:
+                    f.write('# independent model\n')
+                    f.write(df.to_string(index=None))
+                with open(param_path, 'w') as f:
+                    yaml.dump(param_dict, f, default_flow_style=False)
             return df, param_dict
         elif model == 'catastrophe':
             param_dict = {name:param for name, param in zip(param_names, params)}
             df = generate_catastrophe_data(params)
-            with open(data_path, 'w') as f:
-                f.write('# catastrophe model\n')
-                f.write(df.to_string(index=None))
-            with open(param_path, 'w') as f:
-                yaml.dump(param_dict, f, default_flow_style=False)
+            if name:
+                # save file if name is not None
+                with open(data_path, 'w') as f:
+                    f.write('# catastrophe model\n')
+                    f.write(df.to_string(index=None))
+                with open(param_path, 'w') as f:
+                    yaml.dump(param_dict, f, default_flow_style=False)
             return df, param_dict
         else:
             print('Model name should be independent or catastrophe')
