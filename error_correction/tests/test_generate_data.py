@@ -1,6 +1,6 @@
 from unittest import TestCase
-from error_correction.data_io import SyntheticData
 from error_correction import generate_data
+from error_correction.data_io import SyntheticData
 import pandas as  pd
 import numpy as np
 from math import inf
@@ -78,10 +78,45 @@ class TestDataConstruction(TestCase):
         # also check that no noise occurs when p_fn=0
         assert np.array_equal(df['dNk'].values, df['dNk_w_noise'].values)
     def test_independent_data_range(self):
-        # check that results are in expected range
+        # check that results are in expected range without noise
         params = [0.01, 10, 10, 0.5, 0]
         df = generate_data.generate_independent_data(params)
         assert np.all(df['dNk'].values >= 0)
         assert np.all(df['dNk'].values <= 20)
         # also check that no noise occurs when p_fn=0
         assert np.array_equal(df['dNk'].values, df['dNk_w_noise'].values)
+    def test_catastrophe_data_zero_error(self):
+        # check that no errors occur when p_misseg=0 and p_cat = 0
+        params = [0, 10, 10, 0.5, 0, 0, 3]
+        df = generate_data.generate_catastrophe_data(params)
+        assert np.array_equal(df['dNk'].values, np.zeros(10))
+        # also check that no noise occurs when p_fn=0
+        assert np.array_equal(df['dNk'].values, df['dNk_w_noise'].values)
+    def test_catastrophe_data_range(self):
+        # check that results are in expected range without noise
+        C = 5
+        params = [0.01, 10, 10, 0.5, 0, 0.5, C]
+        df = generate_data.generate_catastrophe_data(params)
+        assert np.all(df['dNk'].values >= 0)
+        assert np.all(df['dNk'].values <= 20+C)
+        # also check that no noise occurs when p_fn=0
+        assert np.array_equal(df['dNk'].values, df['dNk_w_noise'].values)
+        
+class TestGenerateData(TestCase):
+    def test_no_name(self):
+        # check that even if file isn't generated data is still saved in variable
+        params = [0, 10, 10, 0.5, 0]
+        data = generate_data.GenerateData('independent', params, name=None, data_dir=None)
+        assert isinstance(data.data, pd.DataFrame)
+        assert isinstance(data.params, dict)
+    def test_param_numbers_ind_and_cat(self):
+        params = [0, 10, 10, 0.5, 0, 0.5, 3]
+        data_ind = generate_data.GenerateData('independent', params[:5], name=None, data_dir=None)
+        data_cat = generate_data.GenerateData('catastrophe', params, name=None, data_dir=None)
+        assert len(data_ind.params.keys()) == 5
+        assert len(data_cat.params.keys()) == 7
+    def test_generate_and_load(self):
+        params = [0.1, 10, 10, 0.5, 0]
+        data = generate_data.GenerateData('independent', params, name='test_generate', data_dir=data_dir)
+        data_loaded = SyntheticData('params_test_generate.yml', 'data_test_generate.txt', data_dir)
+        assert np.array_equal(data.data['dNk'].values, data_loaded.data['dNk'].values)
