@@ -5,7 +5,7 @@ import emcee
 import seaborn as sns
 from error_correction.model import *
 
-def emcee_biased_fit(data, nwalkers=50, nsteps=2000):
+def emcee_biased_fit(data, pos0, nwalkers=50, nsteps=2000):
     """Runs ensemble MCMC on biased independent segregation model.
 
     Parameters
