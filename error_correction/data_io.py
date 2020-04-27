@@ -2,7 +2,23 @@ import os
 import pandas as pd
 import yaml
 
+
 def get_example_data_file_path(filename, data_dir='example_data'):
+    """Short summary.
+
+    Parameters
+    ----------
+    filename : type
+        Description of parameter `filename`.
+    data_dir : type
+        Description of parameter `data_dir`.
+
+    Returns
+    -------
+    type
+        Description of returned object.
+
+    """
     # __file__ is the location of the source file currently in use (so
     # in this case io.py). We can use it as base path to construct
     # other paths from that should end up correct on other machines or
@@ -16,7 +32,28 @@ def get_example_data_file_path(filename, data_dir='example_data'):
     #data_dir = os.path.join(start_dir, data_dir)
     return os.path.join(start_dir, data_dir, filename)
 
+
 class SyntheticData:
+    """Short summary.
+
+    Parameters
+    ----------
+    param_file : type
+        Description of parameter `param_file`.
+    data_file : type
+        Description of parameter `data_file`.
+    data_dir : type
+        Description of parameter `data_dir`.
+
+    Attributes
+    ----------
+    params : type
+        Description of attribute `params`.
+    data : type
+        Description of attribute `data`.
+
+    """
+
     def __init__(self, param_file, data_file, data_dir):
         data_path = get_example_data_file_path(data_file, data_dir)
         param_path = get_example_data_file_path(param_file, data_dir)
