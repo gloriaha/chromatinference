@@ -5,29 +5,45 @@ from error_correction.data_io import get_example_data_file_path
 import yaml
 
 def generate_errors(n_chrom, n_cells, p_misseg):
-    """
-    generates number of random independent missegregation events
-    inputs
-        n_chrom : number of chromosomes in cell, int
-        n_cells : number of cells, int
-        p_misseg : probability of missegregation, float
-    output
-        errors : error counts for each cell, ndarray
+    """Generates number of random independent missegregation events
+    
+    Parameters
+    ----------
+    n_chrom : int
+        number of chromosomes in cell
+    n_cells : int
+        number of cells
+    p_misseg : float
+        probability of missegregation
+        
+    Returns
+    -------
+    errors : ndarray
+        error counts for each cell
     """
     errors = st.binom.rvs(n_chrom, size=n_cells, p=p_misseg)
     return errors
 
 def dN_k_from_errors(n_chrom, errors, p_left):
-    """
-    generates random kinetochore count differences
-    inputs
-        n_chrom : number of chromosomes in cell
-        errors : error counts for each cell, ndarray
-        p_left : probability of missegregating into left cell, float
-    output
-        N_1 : true chromatids in cell 1
-        N_2 : true chromatids in cell 2
-        dN_k : random kinetochore count differences, ndarray
+    """Generates random kinetochore count differences
+    
+    Parameters
+    ----------
+    n_chrom : int
+        number of chromosomes in cell
+    n_cells : int
+        number of cells
+    p_left : float
+        probability of missegregating into left cell, float
+    
+    Returns
+    ----------
+    N_1 : ndarray
+        true chromatids in cell 1
+    N_2 : ndarray
+        true chromatids in cell 2
+    dN_k : ndarray
+        random kinetochore count differences, ndarray
     """
     # choose random numbers to determine if missegregations go left or right
     random_choice = [np.random.random(int(n)) for n in errors]
@@ -39,16 +55,25 @@ def dN_k_from_errors(n_chrom, errors, p_left):
     return N_1, N_2, dN_k
 
 def add_noise(N_1, N_2, p_fn):
-    """
-    adds counting noise to true chromatid counts
-    inputs
-        N_1 : true number of chromatids in cell 1, ndarray
-        N_2 : true number of chromatids in cell 2, ndarray
-        p_fn : probability of false negative, float
-    outputs
-        N_1_noise : measured number of chromatids in cell 1, ndarray
-        N_2_noise : measured number of chromatids in cell 2, ndarray
-        dN_k_noise : measured kinetochore count differences, ndarray
+    """Adds counting noise to true chromatid counts
+    
+    Parameters
+    ----------
+    N_1 : ndarray
+        true chromatids in cell 1
+    N_2 : ndarray
+        true chromatids in cell 2
+    p_fn : float
+        probability of false negative in counting chromatids
+    
+    Returns
+    ----------
+    N_1_noise : ndarray
+        measured number of chromatids in cell 1
+    N_2_noise : ndarray
+        measured number of chromatids in cell 2
+    dN_k_noise : ndarray
+        measured kinetochore count differences, ndarray
     """
     N_1_noise = np.array([st.binom.rvs(int(n), 1-p_fn) for n in N_1])
     N_2_noise = np.array([st.binom.rvs(int(n), 1-p_fn) for n in N_2])
@@ -56,19 +81,31 @@ def add_noise(N_1, N_2, p_fn):
     return N_1_noise, N_2_noise, dN_k_noise
 
 def generate_independent_data(params):
-    """
-    generates true errors and kinetochore count data for independent model
-    inputs
-        p_misseg : probability of independent chromosome missegregation, float
-        n_cells : number of cells to sample, int
-        n_chrom : number of chromosomes per cell, int
-        p_left : probability of missegregating into left cell, float
-        p_fn : probability of false negative in counting chromatid, float
-    output
-        Pandas dataframe containing
-            errors : true error counts for each cell
-            dNk : random kinetochore count differences
-            dNk_w_noise : kinetochore count differences with Poisson noise added
+    """Generates true errors and kinetochore count data for independent model
+    
+    Parameters
+    ----------
+    p_misseg : float
+        probability of missegregation
+    n_cells : int
+        number of cells
+    n_chrom : int
+        number of chromosomes in cell
+    p_left : float
+        probability of missegregating into left cell, float
+    p_fn : float
+        probability of false negative in counting chromatids
+        
+    Returns
+    -------
+    df : Pandas dataframe
+        errors : true error counts for each cell
+        N_1 : true chromatids in cell 1
+        N_2 : true chromatids in cell 2
+        dNk : true kinetochore count differences
+        N_1_w_noise : measured number of chromatids in cell 1
+        N_2_w_noise : measured number of chromatids in cell 2
+        dNk_w_noise : measured kinetochore count differences
     """
     # unpack parameters
     p_misseg, n_cells, n_chrom, p_left, p_fn = params
@@ -89,23 +126,35 @@ def generate_independent_data(params):
     return df
     
 def generate_catastrophe_data(params):
-    """
-    generates true errors and kinetochore count data for catastrophe model
-    inputs
-        p_misseg : probability of independent chromosome missegregation, float
-        n_cells : number of cells to sample, int
-        n_chrom : number of chromosomes per cell, int
-        p_left : probability of missegregating into left cell, float
-        p_fn : probability of false negative in counting chromatid, float
-        p_cat : probability of cell going into catastrophe, float
-        C : fixed number of chromosomes that missegregate in catastrophe cells, int
-    output
-        Pandas dataframe containing
-            errors : true error counts for each cell
-            N_1, N_2 : true chromatids in cells 1, 2
-            dNk : random kinetochore count differences
-            N_1_w_noise, N_2_w_noise : 
-            dNk_w_noise : kinetochore count differences with Poisson noise added
+    """Generates true errors and kinetochore count data for catastrophe model
+    
+    Parameters
+    ----------
+    p_misseg : float
+        probability of missegregation
+    n_cells : int
+        number of cells
+    n_chrom : int
+        number of chromosomes in cell
+    p_left : float
+        probability of missegregating into left cell, float
+    p_fn : float
+        probability of false negative in counting chromatids
+    p_cat : float
+        probability of cell going into catastrophe
+    C : int
+        fixed number of chromosomes that missegregate in catastrophe cells
+        
+    Returns
+    -------
+    df : Pandas dataframe
+        errors : true error counts for each cell
+        N_1 : true chromatids in cell 1
+        N_2 : true chromatids in cell 2
+        dNk : true kinetochore count differences
+        N_1_w_noise : measured number of chromatids in cell 1
+        N_2_w_noise : measured number of chromatids in cell 2
+        dNk_w_noise : measured kinetochore count differences
     """
     # unpack parameters
     p_misseg, n_cells, n_chrom, p_left, p_fn, p_cat, C = params
@@ -132,8 +181,48 @@ def generate_catastrophe_data(params):
 
 class GenerateData:
     def __init__(self, model, params, name, data_dir):
+        """Generate synthetic data.
+
+        Parameters
+        ----------
+        model : str
+            name of model, 'independent' or 'catastrophe'
+        params : list
+            parameters of model
+        name : str
+            name of data file (ex: 'high_ind')
+        data_dir : str
+            directory to store data file
+
+        Attributes
+        ----------
+        params : dict
+            parameter names and values
+        data : Pandas dataframe
+            resulting data
+        """
         self.data, self.params = self.make_data(model, params, name, data_dir)
     def make_data(self, model, params, name, data_dir):
+        """Generate synthetic data.
+
+        Parameters
+        ----------
+        model : str
+            name of model, 'independent' or 'catastrophe'
+        params : list
+            parameters of model
+        name : str
+            name of data file (ex: 'high_ind')
+        data_dir : str
+            directory to store data file
+
+        Returns
+        ----------
+        df : Pandas dataframe
+            resulting data
+        param_dict : dict
+            parameter names and values
+        """
         # store parameter names
         param_names = ['p_misseg', 'n_cells', 'n_chrom', 'p_left', 'p_fn', 'p_cat', 'C']
         # set up file path if name is not None

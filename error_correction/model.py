@@ -4,7 +4,7 @@ from scipy import special
 
 
 def logPriorBiasedDelta(params):
-    """Short summary.
+    """Computes log prior for biased segregation model.
 
     Parameters
     ----------
