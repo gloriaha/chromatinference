@@ -34,23 +34,23 @@ def get_example_data_file_path(filename, data_dir='example_data'):
 
 
 class SyntheticData:
-    """Short summary.
+    """Load synthetic data.
 
     Parameters
     ----------
-    param_file : type
-        Description of parameter `param_file`.
-    data_file : type
-        Description of parameter `data_file`.
-    data_dir : type
-        Description of parameter `data_dir`.
+    param_file : str
+        name of parameter file, ending in .yml
+    data_file : str
+        name of data file, ending in .txt
+    data_dir : str
+        data directory
 
     Attributes
     ----------
-    params : type
-        Description of attribute `params`.
-    data : type
-        Description of attribute `data`.
+    params : dict
+        parameter names and values
+    data : Pandas dataframe
+        data containing kinetochore counts
 
     """
 

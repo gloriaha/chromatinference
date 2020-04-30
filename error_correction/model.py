@@ -3,12 +3,6 @@ import pandas as pd
 from scipy import special
 from scipy.stats import binom
 
-
-
-
-
-
-
 # A bunch of functions that will help us construct likelihoods
 # ___________________________________________________________________
 # ___________________________________________________________________
