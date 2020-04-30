@@ -27,7 +27,6 @@ def emcee_biased_fit(data, pos0, nwalkers=50, nsteps=2000):
     """
     # unpack parameters
     n_chrom = data.params['n_chrom']
-    n_cells = data.params['n_cells']
     dNk = data.data['dNk'].values
     ndim = 2
     # set up starting positions
@@ -37,7 +36,7 @@ def emcee_biased_fit(data, pos0, nwalkers=50, nsteps=2000):
     sampler = emcee.EnsembleSampler
     first_argument = nwalkers
     sampler = sampler(first_argument, ndim, logPostBiasedDelta,
-                      args=(dNk, n_chrom, n_cells))
+                      args=(dNk, n_chrom))
     for i, result in enumerate(sampler.sample(starting_positions, iterations=nsteps)):
         if (i + 1) % 100 == 0:
             print("{0:5.1%}".format(float(i + 1) / nsteps))
