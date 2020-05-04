@@ -4,9 +4,10 @@ import matplotlib.pyplot as plt
 import emcee
 import seaborn as sns
 from error_correction.model import *
+from tqdm import tqdm
 
 def emcee_fit(data, pos0, model, nwalkers=50, nsteps=2000):
-    """Runs ensemble MCMC on biased independent segregation model.
+    """Runs ensemble MCMC on 1 of 4 different models.
 
     Parameters
     ----------
@@ -55,9 +56,8 @@ def emcee_fit(data, pos0, model, nwalkers=50, nsteps=2000):
     sampler = sampler(first_argument, ndim, model_dict[model][0],
                       args=model_dict[model][1])
     # print progress
-    for i, result in enumerate(sampler.sample(starting_positions, iterations=nsteps)):
-        if (i + 1) % 100 == 0:
-            print("{0:5.1%}".format(float(i + 1) / nsteps))
+    for i in tqdm(enumerate(sampler.sample(starting_positions, iterations=nsteps))):
+        pass
     return sampler
 
 

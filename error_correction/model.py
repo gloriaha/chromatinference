@@ -88,8 +88,13 @@ def probN1N2Noisy(p, alpha, pd, N1s, N2s, N):
     # calculate all possible products of two probabilities
     pn1tPdt = binomPdt*PN1T[:, np.newaxis]
     
-    # store corresponding probabilities for each N1, N2 pair
-    probN1N2 = np.array([np.sum(pn1tPdt[N1s[i]-N1_min:2*N-N2s[i]+1-N1_min, i]) for i in range(len(N1s))])
+    # mask out actual slices
+    mask = np.zeros(pn1tPdt.shape)
+    for i in range(len(N1s)):
+        mask[N1s[i]-N1_min:2*N-N2s[i]+1-N1_min, i] = 1
+        
+    # compute probabilities for each N1, N2 pair
+    probN1N2 = np.sum(pn1tPdt*mask, axis=0)
 
     return probN1N2
 
@@ -240,7 +245,7 @@ def logLikeUnbiasedNoisy(params, N1s, N2s, N):
 
 # Write down priors
 def logPriorBiasedDelta(params):
-    """Short summary.
+    """Compute prior for biased model
 
     Parameters
     ----------
@@ -263,7 +268,7 @@ def logPriorBiasedDelta(params):
         return 0.
 
 def logPriorUnbiasedDelta(params):
-    """Short summary.
+    """Compute prior for unbiased model
 
     Parameters
     ----------
@@ -285,7 +290,7 @@ def logPriorUnbiasedDelta(params):
 
 
 def logPriorBiasedNoisy(params):
-    """Short summary.
+    """Compute prior for biased noisy model
 
     Parameters
     ----------
@@ -309,7 +314,7 @@ def logPriorBiasedNoisy(params):
 
 
 def logPriorUnbiasedNoisy(params):
-    """Short summary.
+    """Compute prior for unbiased noisy model.
 
     Parameters
     ----------
