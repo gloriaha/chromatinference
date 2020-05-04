@@ -5,7 +5,7 @@ import emcee
 import seaborn as sns
 from error_correction.model import *
 
-def emcee_biased_fit(data, pos0, nwalkers=50, nsteps=2000):
+def emcee_fit(data, pos0, model, nwalkers=50, nsteps=2000):
     """Runs ensemble MCMC on biased independent segregation model.
 
     Parameters
@@ -14,7 +14,9 @@ def emcee_biased_fit(data, pos0, nwalkers=50, nsteps=2000):
         data : Pandas dataframe
         params : dictionary with parameter values
     pos0 : list 
-      initial position [p_misseg, p_left]
+      initial position
+    model : str
+        model name (unbiased, biased, unbiased_noisy, biased_noisy)
     nwalkers : int
         number of MCMC walkers
     nsteps : int
@@ -25,26 +27,38 @@ def emcee_biased_fit(data, pos0, nwalkers=50, nsteps=2000):
     emcee sampler
         sampler emcee results
     """
-    # unpack parameters
+    
+    # unpack parameters and data
     n_chrom = data.params['n_chrom']
     dNk = data.data['dNk'].values
-    ndim = 2
+    N1s = data.data['N_1_w_noise'].values
+    N2s = data.data['N_2_w_noise'].values
+    ndim = len(pos0)
+    
+    # set up dictionary for model posteriors and arguments
+    model_dict = {'unbiased':[logPostUnbiasedDelta, (dNk, n_chrom)], 
+                  'biased':[logPostBiasedDelta, (dNk, n_chrom)], 
+                  'unbiased_noisy':[logPostUnbiasedNoisy, (N1s, N2s, n_chrom)], 
+                  'biased_noisy':[logPostBiasedNoisy, (N1s, N2s, n_chrom)]}
+    
+    # make sure model name is valid
+    if model not in model_dict.keys():
+        raise ValueError('model must be unbiased, biased, unbiased_noisy, or biased_noisy')
+        
     # set up starting positions
     gaussian_ball = 1.e-3 * np.random.randn(nwalkers, ndim)
     starting_positions = (1 + gaussian_ball) * pos0
+    
     # run sampler
     sampler = emcee.EnsembleSampler
     first_argument = nwalkers
-    sampler = sampler(first_argument, ndim, logPostBiasedDelta,
-                      args=(dNk, n_chrom))
+    sampler = sampler(first_argument, ndim, model_dict[model][0],
+                      args=model_dict[model][1])
+    # print progress
     for i, result in enumerate(sampler.sample(starting_positions, iterations=nsteps)):
         if (i + 1) % 100 == 0:
-            print("{0:5.1%}".format(float(i + 1) / nsteps))
-    #sampler.run_mcmc(starting_positions, nsteps)
+            print("{0:5%}".format(float(i + 1) / nsteps))
 
-    #df = pd.DataFrame(np.vstack(sampler.chain))
-    #df.index = pd.MultiIndex.from_product([range(nwalkers), range(nsteps)], names=['walker', 'step'])
-    #df.columns = ['p_misseg', 'p_left']
     return sampler
 
 

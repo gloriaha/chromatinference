@@ -390,7 +390,7 @@ def logPostUnbiasedDelta(params, deltas, N):
 
 
 
-def logPostBiasedNoisy(params, deltas, N):
+def logPostBiasedNoisy(params, N1s, N2s, N):
     '''
     Compute the posterior of the difference in chromosomes
     within the biased missegregation model
@@ -423,7 +423,7 @@ def logPostBiasedNoisy(params, deltas, N):
 
 
 
-def logPostUnbiasedNoisy(params, deltas, N):
+def logPostUnbiasedNoisy(params, N1s, N2s, N):
     '''
     Compute the posterior of the difference in chromosomes
     within the biased missegregation model
