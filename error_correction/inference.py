@@ -40,11 +40,6 @@ def emcee_biased_fit(data, pos0, nwalkers=50, nsteps=2000):
     for i, result in enumerate(sampler.sample(starting_positions, iterations=nsteps)):
         if (i + 1) % 100 == 0:
             print("{0:5.1%}".format(float(i + 1) / nsteps))
-    #sampler.run_mcmc(starting_positions, nsteps)
-
-    #df = pd.DataFrame(np.vstack(sampler.chain))
-    #df.index = pd.MultiIndex.from_product([range(nwalkers), range(nsteps)], names=['walker', 'step'])
-    #df.columns = ['p_misseg', 'p_left']
     return sampler
 
 

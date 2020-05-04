@@ -201,8 +201,8 @@ class GenerateData:
         data : Pandas dataframe
             resulting data
         """
-        self.data, self.params = self.make_data(model, params, name, data_dir)
-    def make_data(self, model, params, name, data_dir):
+        self.data, self.params = self._make_data(model, params, name, data_dir)
+    def _make_data(self, model, params, name, data_dir):
         """Generate synthetic data.
 
         Parameters
@@ -225,32 +225,32 @@ class GenerateData:
         """
         # store parameter names
         param_names = ['p_misseg', 'n_cells', 'n_chrom', 'p_left', 'p_fn', 'p_cat', 'C']
-        # set up file path if name is not None
+        
+        # generate data
+        if model == 'independent':
+            generate_fun = generate_independent_data
+            param_names = param_names[:5]
+        elif model == 'catastrophe':
+            generate_fun = generate_catastrophe_data
+        else:
+            raise ValueError('Model name should be independent or catastrophe')
+        df = generate_fun(params)
+        param_dict = {name:param for name, param in zip(param_names, params)}
+        
+        # write data if name is not None
         if name:
             data_path = get_example_data_file_path('data_'+str(name)+'.txt', data_dir)
             param_path = get_example_data_file_path('params_'+str(name)+'.yml', data_dir)
-        # generate and write data files
-        if model == 'independent':
-            param_dict = {name:param for name, param in zip(param_names[:5], params)}
-            df = generate_independent_data(params)
-            if name:
-                # save file if name is not None
-                with open(data_path, 'w') as f:
-                    f.write('# independent model\n')
-                    f.write(df.to_string(index=None))
-                with open(param_path, 'w') as f:
-                    yaml.dump(param_dict, f, default_flow_style=False)
-            return df, param_dict
-        elif model == 'catastrophe':
-            param_dict = {name:param for name, param in zip(param_names, params)}
-            df = generate_catastrophe_data(params)
-            if name:
-                # save file if name is not None
-                with open(data_path, 'w') as f:
-                    f.write('# catastrophe model\n')
-                    f.write(df.to_string(index=None))
-                with open(param_path, 'w') as f:
-                    yaml.dump(param_dict, f, default_flow_style=False)
-            return df, param_dict
-        else:
-            print('Model name should be independent or catastrophe')
+            self._write_data(df, param_dict, model, data_path, param_path)
+        # return data
+        return df, param_dict
+
+    def _write_data(self, df, param_dict, model, data_path, param_path):
+        # write data to txt file
+        with open(data_path, 'w') as f:
+            f.write('# '+model+' model\n')
+            f.write(df.to_string(index=None))
+            
+        # write params to yaml file
+        with open(param_path, 'w') as f:
+            yaml.dump(param_dict, f, default_flow_style=False)
