@@ -368,7 +368,7 @@ def logPostUnbiasedDelta(params, deltas, N):
     Parameters
     ----------
     params : list-like
-        params = [p, alpha]
+        params = [p]
         p : probability of chromosome missegregation
     deltas : ndarray
         kinetochore differences, from dNk column of data
