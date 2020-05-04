@@ -4,9 +4,11 @@ import matplotlib.pyplot as plt
 import emcee
 import seaborn as sns
 from error_correction.model import *
+from tqdm import tqdm
+from multiprocessing import Pool
 
-def emcee_biased_fit(data, pos0, nwalkers=50, nsteps=2000):
-    """Runs ensemble MCMC on biased independent segregation model.
+def emcee_fit(data, pos0, model, nwalkers=50, nsteps=2000):
+    """Runs ensemble MCMC on 1 of 4 different models.
 
     Parameters
     ----------
@@ -14,7 +16,9 @@ def emcee_biased_fit(data, pos0, nwalkers=50, nsteps=2000):
         data : Pandas dataframe
         params : dictionary with parameter values
     pos0 : list 
-      initial position [p_misseg, p_left]
+      initial position
+    model : str
+        model name (unbiased, biased, unbiased_noisy, biased_noisy)
     nwalkers : int
         number of MCMC walkers
     nsteps : int
@@ -25,21 +29,34 @@ def emcee_biased_fit(data, pos0, nwalkers=50, nsteps=2000):
     emcee sampler
         sampler emcee results
     """
-    # unpack parameters
+    
+    # unpack parameters and data
     n_chrom = data.params['n_chrom']
     dNk = data.data['dNk'].values
-    ndim = 2
+    N1s = data.data['N_1_w_noise'].values
+    N2s = data.data['N_2_w_noise'].values
+    ndim = len(pos0)
+    
+    # set up dictionary for model posteriors and arguments
+    model_dict = {'unbiased':[logPostUnbiasedDelta, (dNk, n_chrom)], 
+                  'biased':[logPostBiasedDelta, (dNk, n_chrom)], 
+                  'unbiased_noisy':[logPostUnbiasedNoisy, (N1s, N2s, n_chrom)], 
+                  'biased_noisy':[logPostBiasedNoisy, (N1s, N2s, n_chrom)]}
+    
+    # make sure model name is valid
+    if model not in model_dict.keys():
+        raise ValueError('model must be unbiased, biased, unbiased_noisy, or biased_noisy')
+        
     # set up starting positions
     gaussian_ball = 1.e-3 * np.random.randn(nwalkers, ndim)
     starting_positions = (1 + gaussian_ball) * pos0
-    # run sampler
-    sampler = emcee.EnsembleSampler
-    first_argument = nwalkers
-    sampler = sampler(first_argument, ndim, logPostBiasedDelta,
-                      args=(dNk, n_chrom))
-    for i, result in enumerate(sampler.sample(starting_positions, iterations=nsteps)):
-        if (i + 1) % 100 == 0:
-            print("{0:5.1%}".format(float(i + 1) / nsteps))
+    
+    # run MCMC with multiprocessing
+    with Pool() as pool:
+        sampler = emcee.EnsembleSampler(nwalkers, ndim, model_dict[model][0], args=model_dict[model][1], pool=pool)
+        # print progress
+        for i in tqdm(enumerate(sampler.sample(starting_positions, iterations=nsteps))):
+            pass
     return sampler
 
 
@@ -66,10 +83,10 @@ def burnInPlotAffine(nTheta, sampler, param_names):
     xVals = range(len(sampler.chain[0]))
     for i in range(len(sampler.chain)):
         for j in range(nTheta):
-            sns.lineplot(xVals, sampler.chain[i,:,j], ax=axs[j])
+            sns.lineplot(xVals, sampler.chain[i,:,j], ax=axs[j]);
     for j in range(nTheta):
-        axs[j].set_ylabel(param_names[j])
-        axs[j].set_xlabel('steps')
+        axs[j].set_ylabel(param_names[j]);
+        axs[j].set_xlabel('steps');
     return axs
 
 def delete_burn_in(sampler, n_pts, n_dim, param_names):
@@ -97,3 +114,58 @@ def delete_burn_in(sampler, n_pts, n_dim, param_names):
     sample_dict = {name:trace for name, trace in zip(param_names, traces)}
     df = pd.DataFrame(sample_dict)
     return df
+
+def emcee_PT_fit(data, pos0, model, nwalkers=50, nsteps=1000, ntemps=5):
+    """Runs parallel tempered MCMC on 1 of 4 different models.
+
+    Parameters
+    ----------
+    data : SyntheticData or GenerateData-like object
+        data : Pandas dataframe
+        params : dictionary with parameter values
+    pos0 : list 
+      initial position
+    model : str
+        model name (unbiased, biased, unbiased_noisy, biased_noisy)
+    nwalkers : int
+        number of MCMC walkers
+    nsteps : int
+        number of MCMC steps
+
+    Returns
+    -------
+    emcee sampler
+        sampler PT emcee results
+    """
+     # unpack parameters and data
+    n_chrom = data.params['n_chrom']
+    dNk = data.data['dNk'].values
+    N1s = data.data['N_1_w_noise'].values
+    N2s = data.data['N_2_w_noise'].values
+    ndim = len(pos0)
+    
+    # set up dictionary for model posteriors and arguments
+    model_dict = {'unbiased':[logPriorUnbiasedDelta, logLikeUnbiasedDelta, (dNk, n_chrom)], 
+                  'biased':[logPriorBiasedDelta, logLikeBiasedDelta, (dNk, n_chrom)], 
+                  'unbiased_noisy':[logPriorUnbiasedNoisy, logLikeUnbiasedNoisy, (N1s, N2s, n_chrom)], 
+                  'biased_noisy':[logPriorBiasedNoisy, logLikeBiasedNoisy, (N1s, N2s, n_chrom)]}
+    # make sure model name is valid
+    if model not in model_dict.keys():
+        raise ValueError('model must be unbiased, biased, unbiased_noisy, or biased_noisy')
+
+    # use temperature ladder specified in Gregory (see p. 330)
+    betas = np.array([1.0, 0.7525, 0.505, 0.2575, 0.01])
+
+    # np.tile copies an array and then stacks the copies.  The
+    # second parameter is the number of repetitions along each axis
+    starting_positions = np.tile(pos0, (ntemps,nwalkers,1)) + 1e-4*np.random.randn(ntemps, nwalkers, ndim)
+    # run parallel tempered MCMC with multiprocessing
+    with Pool() as pool:
+        # set up sampler object
+        sampler = emcee.PTSampler(ntemps, nwalkers, ndim, model_dict[model][1], model_dict[model][0], 
+                              betas = betas,
+                              loglargs=model_dict[model][2])
+        # run the sampler. 
+        for i in tqdm(enumerate(sampler.run_mcmc(starting_positions, nsteps))):
+                pass
+    return sampler

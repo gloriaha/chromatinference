@@ -17,7 +17,7 @@ def probN1(p, alpha, N1, N):
         probability of missegregation
     alpha : float-like
         bias
-    N1 : int-like
+    N1 : ndarray
         number of chromatids in daughter cell 1
     N : int-like
         number of chromosomes
@@ -27,96 +27,24 @@ def probN1(p, alpha, N1, N):
     Returns
     __________
 
-    pN1 : float-like
-        probability of N1 chromosomes
+    pN1 : ndarray
+        probabilities of N1 chromosomes
     '''
-    # Array of number of possible missegregations
+    # Array of number of possible missegregations, corresponding meshgrid
     m = np.arange(N+1)
-
+    mm, nn = np.meshgrid(m, N1)
+    
     # Groups of binomial probabilities
-    binoms1 = binom.pmf(m, N, p)
-    binoms2 = binom.pmf((N1-N+m)/2., m, alpha)
-
-    pN1 = sum(binoms1*binoms2)
+    binoms1 = binom.pmf(mm, N, p)
+    binoms2 = binom.pmf((nn-N+mm)/2., mm, alpha)
+    
+    # multiply and sum everything up
+    pN1 = np.sum(binoms1*binoms2, axis=1)
 
     return pN1
 
 
-
-def probDelta(p, alpha, delta, N):
-    '''
-    Compute the probability of N1 chromatids in daughter cell 1
-    given N chromosomes, bias alpha, and missegregation probability p
-
-    Parameters
-    __________
-
-    p : float-like
-        probability of missegregation
-    alpha : float-like
-        bias
-    N : int-like
-        number of chromosomes
-    delta : int-like
-        difference in chromatids between daughter cells
-
-        
-
-    Returns
-    __________
-
-    pDelta : float-like
-        probability of delta difference of chromosomes
-    '''
-    # Note that N1 = N(+/-)delta/2
-    if delta == 0:
-        pDelta = probN1(p, alpha, N, N)
-    if delta != 0:
-        pDelta = probN1(p, alpha, N+delta/2, N)+probN1(p, alpha, N-delta/2, N)
-
-    return pDelta
-
-
-
-def binomialProbsNoisy(pd, N1, N2, N):
-    '''
-    Function that returns the binomial probabilities needed to sum
-    over in order to get the likelihood functions with experimental
-    noise (false negatives in kinetochore detection)
-
-    Parameters
-    __________
-
-    pd : float-like
-        kinetochore detection probability
-    N : int-like
-        number of chromosomes
-    Nd : array-like
-        Nd = np.array([N1, N2])
-        N1 : number of kinetochores in daughter cell 1
-        N2 : number of kinetochores in daughter cell 2
-
-    Returns
-    __________
-
-    binomArray : array-like
-        array of binomial probabilities
-    '''
-    
-    # Write down the allowed values of N1Tilde
-    N1TildeVals = np.arange(N1, 2*N-N2+1)
-
-    # Write down the binomial probabilities
-    binom1 = binom.pmf(N1, N1TildeVals, pd)
-    binom2 = binom.pmf(N2, 2*N-N1TildeVals, pd)
-
-    binomArray = binom1*binom2
-
-    return binomArray
-
-
-
-def probN1N2Noisy(p, alpha, pd, N1, N2, N):
+def probN1N2Noisy(p, alpha, pd, N1s, N2s, N):
     '''
     Function that returns the probability of N1 chromatids in cell 1
     and N2 chromatids in cell 2
@@ -130,9 +58,9 @@ def probN1N2Noisy(p, alpha, pd, N1, N2, N):
         chromosome missegregation bias
     pd : float-like
         kinetochore detection probability
-    N1 : array-like
+    N1 : ndarray
         number of kinetochores in daughter cell 1
-    N2 : array-like
+    N2 : ndarray
         number of kinetochores in daughter cell 2
     N : int-like
         number of chromosomes
@@ -140,22 +68,33 @@ def probN1N2Noisy(p, alpha, pd, N1, N2, N):
     Returns
     __________
 
-    probN1N2 : float-like
-        probability of N1 and N2
+    probN1N2 : ndarray
+        probabilities of each N1 and N2 pair
     '''
+    # set up all possible values of N1Tilde
+    N1_min = np.min(N1s)
+    N1T = np.arange(N1_min, 2*N+1-np.min(N2s))
 
-    # Calculate the allowed values of N1Tilde
-    N1T = np.arange(N1, 2*N-N2+1)
+    # calculate the probabilities of these N1T
+    PN1T = probN1(p, alpha, N1T, N)
 
-    # Calculate the probabilities of these values
-    vectorizedPN1 = np.vectorize(probN1)
-    PN1T = vectorizedPN1(p, alpha, N1T, N)
-
-    # Calculate the appropriate binomial values
-    binomVals = binomialProbsNoisy(pd, N1, N2, N)
-
-    # Compute the sum of the product of the above
-    probN1N2 = sum(binomVals*PN1T)
+    # calculate all possible binomial values
+    nn1, nn1t = np.meshgrid(N1s, N1T)
+    nn2, nn2t = np.meshgrid(N2s, N1T)
+    binom1 = binom.pmf(nn1, nn1t, pd)
+    binom2 = binom.pmf(nn2, 2*N-nn2t, pd)
+    binomPdt = binom1*binom2
+    
+    # calculate all possible products of two probabilities
+    pn1tPdt = binomPdt*PN1T[:, np.newaxis]
+    
+    # mask out actual slices
+    mask = np.zeros(pn1tPdt.shape)
+    for i in range(len(N1s)):
+        mask[N1s[i]-N1_min:2*N-N2s[i]+1-N1_min, i] = 1
+        
+    # compute probabilities for each N1, N2 pair
+    probN1N2 = np.sum(pn1tPdt*mask, axis=0)
 
     return probN1N2
 
@@ -186,16 +125,16 @@ def logLikeBiasedDelta(params, deltas, N):
     # Note the model parameters
     p, alpha = params
 
-    # Calculate the likelihood
-    # First, vectorize it
-    vectorizedLikelihood = np.vectorize(probDelta)
-    likes = vectorizedLikelihood(p, alpha, deltas, N)
+    # Calculate the likelihoods for N1 and N2
+    likes = probN1(p, alpha, N+deltas/2, N)+probN1(p, alpha, N-deltas/2, N)
+    
+    # correct for overcounting for delta=0 cases
+    likes -= likes/2*(deltas==0)
 
     # Take the logs, then sum, then return the log likelihood
-    logLikelihood = sum(np.log(likes))
+    logLikelihood = np.sum(np.log(likes))
 
     return logLikelihood
-
 
 
 def logLikeUnbiasedDelta(params, deltas, N):
@@ -257,20 +196,18 @@ def logLikeBiasedNoisy(params, N1s, N2s, N):
     # Note the model parameters
     p, alpha, pd = params
 
-    # Calculate the likelihood
-    # First, vectorize it
-    vectorizedLikelihood = np.vectorize(probN1N2Noisy)
-    likes1 = vectorizedLikelihood(p, alpha, pd, N1s, N2s, N)
-    likes2 = vectorizedLikelihood(p, 1.-alpha, pd, N1s, N2s, N)
+    # Calculate the likelihood for alpha and 1-alpha (symmetry)
+    likes1 = probN1N2Noisy(p, alpha, pd, N1s, N2s, N)
+    likes2 = probN1N2Noisy(p, 1.-alpha, pd, N1s, N2s, N)
     likes = (likes1+likes2)/2.
 
     # Take the logs, then sum, then return the log likelihood
-    logLikelihood = sum(np.log(likes))
+    logLikelihood = np.sum(np.log(likes))
 
     return logLikelihood
 
 
-
+    return logLikelihood
 def logLikeUnbiasedNoisy(params, N1s, N2s, N):
     '''
     Compute the likelihood of the difference in chromosomes
@@ -294,25 +231,21 @@ def logLikeUnbiasedNoisy(params, N1s, N2s, N):
     float-like
         log likelihood function of the above
     '''
-    
     # Note the model parameters
     p, pd = params
-    params2 = [p, 0.5, pd]
+    #params2 = [p, 0.5, pd]
 
     # Call the biased likelihood function but with alpha = 0.5
-    logLikelihood = logLikeBiasedNoisy(params2, N1s, N2s, N)
+    #logLikelihood = logLikeBiasedNoisy(params2, N1s, N2s, N)
+    likes = probN1N2Noisy(p, 0.5, pd, N1s, N2s, N)
+    logLikelihood = np.sum(np.log(likes))
 
     return logLikelihood
 
 
-
-
-
-
-
 # Write down priors
 def logPriorBiasedDelta(params):
-    """Short summary.
+    """Compute prior for biased model
 
     Parameters
     ----------
@@ -334,10 +267,8 @@ def logPriorBiasedDelta(params):
     else:
         return 0.
 
-
-
 def logPriorUnbiasedDelta(params):
-    """Short summary.
+    """Compute prior for unbiased model
 
     Parameters
     ----------
@@ -359,7 +290,7 @@ def logPriorUnbiasedDelta(params):
 
 
 def logPriorBiasedNoisy(params):
-    """Short summary.
+    """Compute prior for biased noisy model
 
     Parameters
     ----------
@@ -382,9 +313,8 @@ def logPriorBiasedNoisy(params):
         return 0
 
 
-
 def logPriorUnbiasedNoisy(params):
-    """Short summary.
+    """Compute prior for unbiased noisy model.
 
     Parameters
     ----------
@@ -402,11 +332,6 @@ def logPriorUnbiasedNoisy(params):
     params2 = [p, 0.5, pd]
 
     return logPriorBiasedNoisy(params2)
-
-
-
-
-
 
 
 # Write down posteriors
@@ -449,7 +374,7 @@ def logPostUnbiasedDelta(params, deltas, N):
     Parameters
     ----------
     params : list-like
-        params = [p, alpha]
+        params = [p]
         p : probability of chromosome missegregation
     deltas : ndarray
         kinetochore differences, from dNk column of data
@@ -471,7 +396,7 @@ def logPostUnbiasedDelta(params, deltas, N):
 
 
 
-def logPostBiasedNoisy(params, deltas, N):
+def logPostBiasedNoisy(params, N1s, N2s, N):
     '''
     Compute the posterior of the difference in chromosomes
     within the biased missegregation model
@@ -504,7 +429,7 @@ def logPostBiasedNoisy(params, deltas, N):
 
 
 
-def logPostUnbiasedNoisy(params, deltas, N):
+def logPostUnbiasedNoisy(params, N1s, N2s, N):
     '''
     Compute the posterior of the difference in chromosomes
     within the biased missegregation model
