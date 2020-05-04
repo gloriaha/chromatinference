@@ -57,8 +57,7 @@ def emcee_fit(data, pos0, model, nwalkers=50, nsteps=2000):
     # print progress
     for i, result in enumerate(sampler.sample(starting_positions, iterations=nsteps)):
         if (i + 1) % 100 == 0:
-            print("{0:5%}".format(float(i + 1) / nsteps))
-
+            print("{0:5.1%}".format(float(i + 1) / nsteps))
     return sampler
 
 
