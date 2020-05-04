@@ -71,9 +71,9 @@ def probN1N2Noisy(p, alpha, pd, N1s, N2s, N):
     probN1N2 : ndarray
         probabilities of each N1 and N2 pair
     '''
-
     # set up all possible values of N1Tilde
-    N1T = np.arange(0, 2*N+1)
+    N1_min = np.min(N1s)
+    N1T = np.arange(N1_min, 2*N+1-np.min(N2s))
 
     # calculate the probabilities of these N1T
     PN1T = probN1(p, alpha, N1T, N)
@@ -89,7 +89,7 @@ def probN1N2Noisy(p, alpha, pd, N1s, N2s, N):
     pn1tPdt = binomPdt*PN1T[:, np.newaxis]
     
     # store corresponding probabilities for each N1, N2 pair
-    probN1N2 = np.array([np.sum(pn1tPdt[N1s[i]:2*N-N2s[i]+1, i]) for i in range(len(N1s))])
+    probN1N2 = np.array([np.sum(pn1tPdt[N1s[i]-N1_min:2*N-N2s[i]+1-N1_min, i]) for i in range(len(N1s))])
 
     return probN1N2
 
@@ -226,13 +226,14 @@ def logLikeUnbiasedNoisy(params, N1s, N2s, N):
     float-like
         log likelihood function of the above
     '''
-    
     # Note the model parameters
     p, pd = params
-    params2 = [p, 0.5, pd]
+    #params2 = [p, 0.5, pd]
 
     # Call the biased likelihood function but with alpha = 0.5
-    logLikelihood = logLikeBiasedNoisy(params2, N1s, N2s, N)
+    #logLikelihood = logLikeBiasedNoisy(params2, N1s, N2s, N)
+    likes = probN1N2Noisy(p, 0.5, pd, N1s, N2s, N)
+    logLikelihood = np.sum(np.log(likes))
 
     return logLikelihood
 
