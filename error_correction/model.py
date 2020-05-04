@@ -207,7 +207,7 @@ def logLikeBiasedNoisy(params, N1s, N2s, N):
     return logLikelihood
 
 
-    return logLikelihood
+
 def logLikeUnbiasedNoisy(params, N1s, N2s, N):
     '''
     Compute the likelihood of the difference in chromosomes
@@ -266,6 +266,8 @@ def logPriorBiasedDelta(params):
         return -np.inf
     else:
         return 0.
+
+
 
 def logPriorUnbiasedDelta(params):
     """Compute prior for unbiased model
