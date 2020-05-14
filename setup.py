@@ -8,5 +8,5 @@ setup(name='error_correction',
       author_email='gloriaha@users.noreply.github.com',
       license='GPLv3',
       packages=['error_correction'],
-      install_requires=['numpy', 'matplotlib', 'pandas', 'scipy', 'seaborn', 'emcee', 'pyyaml', 'tqdm', 'multiprocessing'],
+      install_requires=['numpy', 'matplotlib', 'pandas', 'scipy', 'seaborn', 'emcee', 'pyyaml', 'tqdm'],
       zip_safe=False)
