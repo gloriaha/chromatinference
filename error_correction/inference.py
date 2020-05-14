@@ -152,10 +152,6 @@ def emcee_PT_fit(data, pos0, model, nwalkers=50, nsteps=1000, ntemps=5):
     # make sure model name is valid
     if model not in model_dict.keys():
         raise ValueError('model must be unbiased, biased, unbiased_noisy, or biased_noisy')
-
-    # use temperature ladder specified in Gregory (see p. 330)
-    betas = np.array([1.0, 0.7525, 0.505, 0.2575, 0.01])
-
     # np.tile copies an array and then stacks the copies.  The
     # second parameter is the number of repetitions along each axis
     starting_positions = np.tile(pos0, (ntemps,nwalkers,1)) + 1e-4*np.random.randn(ntemps, nwalkers, ndim)
@@ -163,7 +159,6 @@ def emcee_PT_fit(data, pos0, model, nwalkers=50, nsteps=1000, ntemps=5):
     with Pool() as pool:
         # set up sampler object
         sampler = emcee.PTSampler(ntemps, nwalkers, ndim, model_dict[model][1], model_dict[model][0], 
-                              betas = betas,
                               loglargs=model_dict[model][2])
         # run the sampler. 
         for i in tqdm(enumerate(sampler.run_mcmc(starting_positions, nsteps))):
