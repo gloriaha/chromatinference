@@ -1,7 +1,7 @@
 import numpy as np
 import scipy.stats as st
 import pandas as pd
-from chromatinference.data_io import get_example_data_file_path
+from error_correction.data_io import get_example_data_file_path
 import yaml
 
 def generate_errors(n_chrom, n_cells, p_misseg):

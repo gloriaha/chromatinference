@@ -3,7 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import emcee
 import seaborn as sns
-from chromatinference.model import *
+from error_correction.model import *
 from tqdm import tqdm
 from multiprocessing import Pool
 
@@ -79,11 +79,11 @@ def burnInPlotAffine(nTheta, sampler, param_names):
         axes of plots
 
     """
-    fig, axs = plt.subplots(nTheta);
-    xVals = range(len(sampler.chain[0]));
+    fig, axs = plt.subplots(nTheta)
+    xVals = range(len(sampler.chain[0]))
     for i in range(len(sampler.chain)):
         for j in range(nTheta):
-            sns.lineplot(x=xVals, y=sampler.chain[i,:,j], ax=axs[j]);
+            sns.lineplot(xVals, sampler.chain[i,:,j], ax=axs[j]);
     for j in range(nTheta):
         axs[j].set_ylabel(param_names[j]);
         axs[j].set_xlabel('steps');

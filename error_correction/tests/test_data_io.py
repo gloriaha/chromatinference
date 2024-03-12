@@ -1,5 +1,5 @@
 from unittest import TestCase
-from chromatinference.data_io import SyntheticData
+from error_correction.data_io import SyntheticData
 import pandas as  pd
 import numpy as np
 from math import inf
