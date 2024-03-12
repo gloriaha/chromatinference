@@ -1,4 +1,4 @@
-# error_correction
+# chromatinference
 ## Description
 Authors: Gloria Ha and Paul Dieterle
 
